@@ -1,0 +1,19 @@
+---
+pre_tasks:
+  - set_fact:
+      es_hosts: "http://{{ hostvars['el-instance']['ansible_facts']['default_ipv4']['address'] }}:9200"
+      kib_host: "http://{{ hostvars['kib-instance']['ansible_facts']['default_ipv4']['address'] }}:5601"
+
+- name: Install Elasticsearch
+  hosts: elasticsearch
+  roles:
+    - { elasticsearch_role, kibana_es_hosts: "{{ es_hosts }}" }
+- name: Install Kibana
+  hosts: kibana
+  roles:
+    - { kibana_role, filebeat_es_url: "{{ es_hosts }}", filebeat_kibana_url: "{{ kib_host }}" }
+- name: Install Filebeat
+  hosts: filebeat
+  roles:
+    - filebeat_role
+  
