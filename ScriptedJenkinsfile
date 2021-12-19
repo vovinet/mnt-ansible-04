@@ -1,0 +1,17 @@
+node("linux"){
+    stage("Git checkout"){
+        git branch: 'main', credentialsId: 'kisa2', url: 'git@github.com:vovinet/mnt-ansible-04.git'
+    }
+    stage("Download dependencies") {
+        sh 'ansible-galaxy install -p roles -r requirements.yml'
+    }
+    stage("Run playbook"){
+        if (prod_run){
+            sh 'ansible-playbook site.yml -i inventory/prod.yml'
+        }
+        else{
+            sh 'ansible-playbook site.yml -i inventory/prod --check --diff'
+        }
+        
+    }
+}
