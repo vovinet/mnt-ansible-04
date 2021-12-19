@@ -1,19 +1,35 @@
 ---
-pre_tasks:
-  - set_fact:
-      es_hosts: "http://{{ hostvars['el-instance']['ansible_facts']['default_ipv4']['address'] }}:9200"
-      kib_host: "http://{{ hostvars['kib-instance']['ansible_facts']['default_ipv4']['address'] }}:5601"
-
 - name: Install Elasticsearch
-  hosts: elasticsearch
+  hosts: el-instance
+
+  pre_tasks:
+    - name: Get Host IP
+      set_fact:
+        es_hosts: "http://{{ ansible_facts['default_ipv4']['address'] }}:9200"
+
   roles:
-    - { elasticsearch_role, kibana_es_hosts: "{{ es_hosts }}" }
+    - { role: elasticsearch_role, kibana_es_hosts: "{{ es_hosts }}" }
+
 - name: Install Kibana
-  hosts: kibana
+  hosts: kib-instance
+
+  pre_tasks:
+    - name: Get Elasticsearch IP
+      set_fact:
+        kib_host: "http://{{ hostvars['kib-instance']['ansible_facts']['default_ipv4']['address'] }}:5601"
+  
   roles:
-    - { kibana_role, filebeat_es_url: "{{ es_hosts }}", filebeat_kibana_url: "{{ kib_host }}" }
+    - { role: kibana_role, kibana_es_url: "{{ es_hosts }}" }
+
 - name: Install Filebeat
-  hosts: filebeat
+  hosts: app-instance
+
+  pre_tasks:
+    - name: Get ES and Kibana IPs
+      set_fact:
+        es_hosts: "http://{{ hostvars['el-instance']['ansible_facts']['default_ipv4']['address'] }}:9200"
+        kib_host: "http://{{ hostvars['kib-instance']['ansible_facts']['default_ipv4']['address'] }}:5601"
+
   roles:
-    - filebeat_role
+    - { role: filebeat_role, filebeat_es_url: "{{ es_hosts }}", filebeat_kibana_url: "{{ kib_host }}" }
   
